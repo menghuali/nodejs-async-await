@@ -1,19 +1,35 @@
 const axios = require('axios');
 
 const getExchangeRateOld = (from, to) => {
-  return axios.get('http://data.fixer.io/api/latest?access_key=fbd5b97a2f028ae32490049ce59067af').then((res) => {
-    return res.data.rates[to] / res.data.rates[from];
-  });
+    return axios.get('http://data.fixer.io/api/latest?access_key=fbd5b97a2f028ae32490049ce59067af').then((res) => {
+      return res.data.rates[to] / res.data.rates[from];
+    });
 };
 
 const getExchangeRate = async (from, to) => {
-  const res = await axios.get('http://data.fixer.io/api/latest?access_key=fbd5b97a2f028ae32490049ce59067af');
-  return res.data.rates[to] / res.data.rates[from];
+  try {
+    const res = await axios.get('http://data.fixer.io/api/latest?access_key=fbd5b97a2f028ae32490049ce59067af');
+    const rate = res.data.rates[to] / res.data.rates[from];
+    if (isNaN(rate)) {
+      throw new Error();
+    }
+    return rate;
+  } catch (e) {
+    throw new Error(`Unable to get exchage rate for ${from} and ${to}.`);
+  }
 };
 
 const getCountries = async (currency) => {
-  const res = await axios.get(`https://restcountries.eu/rest/v2/currency/${currency}`);
-  return res.data.map((country) => country.name);
+  try {
+    const res = await axios.get(`https://restcountries.eu/rest/v2/currency/${currency}`);
+    const countries = res.data.map((country) => country.name);
+    if(!countries || countries.length === 0) {
+      throw new Error();
+    }
+    return countries;
+  } catch (e) {
+    throw new Error(`Unable to get the countries for the currency ${currency}.`)
+  }
 };
 
 const convertCurrency = (from, to, amount) => {
@@ -35,4 +51,6 @@ const convertCurrencyAsync = async (from, to, amount) => {
   return `${amount} ${from} is worth ${convertedAmount} ${to}. You can spend it in the following countries: ${countries.join(', ')}`;
 }
 
-convertCurrencyAsync('USD', 'CNY', 100).then((result) => console.log(result));
+convertCurrencyAsync('USD', 'GBP', 100).then((result) => console.log(result)).catch((e) => {
+  console.log(e.message);
+});
